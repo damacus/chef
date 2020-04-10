@@ -30,7 +30,7 @@ class Chef
       LC_VARIABLES = %w{LC_ADDRESS LC_COLLATE LC_CTYPE LC_IDENTIFICATION LC_MEASUREMENT LC_MESSAGES LC_MONETARY LC_NAME LC_NUMERIC LC_PAPER LC_TELEPHONE LC_TIME}.freeze
       LOCALE_CONF = "/etc/locale.conf".freeze
       LOCALE_REGEX = /\A\S+/.freeze
-      LOCALE_PLATFORM_FAMILIES = %w{debian}.freeze
+      LOCALE_PLATFORM_FAMILIES = %w{debian windows}.freeze
 
       property :lang, String,
         description: "Sets the default system language.",
@@ -69,8 +69,7 @@ class Chef
         description "Update the system's locale."
         unless up_to_date?
           converge_by "Updating System Locale" do
-            generate_locales unless unavailable_locales.empty?
-            update_locale
+            set_system_locale
           end
         end
       end
@@ -97,6 +96,29 @@ class Chef
         #
         def generate_locales
           shell_out!("locale-gen #{unavailable_locales.join(" ")}")
+        end
+
+        # Windows only: Gets the System-locale setting for the current computer.
+        # @see https://docs.microsoft.com/en-us/powershell/module/international/get-winsystemlocale
+        #
+        def get_system_locale
+          response = powershell_exec("Get-WinSystemLocale")
+          response.result["Name"]
+        end
+
+        # Sets the system locale for the current computer.
+        #
+        def set_system_locale
+          if windows?
+            # Sets the system locale for the current computer.
+            # @see https://docs.microsoft.com/en-us/powershell/module/internationalcmdlets/set-winsystemlocale
+            #
+            response = powershell_exec("Set-WinSystemLocale -SystemLocale #{new_resource.lang}")
+            raise response.errors.join(" ") if response.error?
+          else
+            generate_locales unless unavailable_locales.empty?
+            update_locale
+          end
         end
 
         # Updates system locale by appropriately writing them in /etc/locale.conf
@@ -138,8 +160,12 @@ class Chef
         # @return [Boolean] Whether any modification is required in /etc/locale.conf
         #
         def up_to_date?
-          old_content = ::File.read(LOCALE_CONF)
-          new_content == old_content
+          if windows?
+            new_resource.lang == get_system_locale
+          else
+            old_content = ::File.read(LOCALE_CONF)
+            new_content == old_content
+          end
         rescue
           false # We need to create the file if it is not present
         end
