@@ -590,6 +590,22 @@ describe Chef::Provider::Git do
     end
   end
 
+  context "why-run mode" do
+    before do
+      @resource.user "test"
+    end
+
+    it "raises an error if user does not exist" do
+      allow(@provider).to receive(:safe_get_homedir).with(@resource.user).and_return(nil)
+      expect { @provider.run_action(:sync) }.to raise_error(Chef::Exceptions::User)
+    end
+
+    it "Does not raise an error if user exists" do
+      allow(@provider).to receive(:get_homedir).with(@resource.user).and_return("/home/test")
+      expect { @provider.run_action(:sync) }.not_to raise_error(Chef::Exceptions::User)
+    end
+  end
+
   it "raises an error if the git clone command would fail because the enclosing directory doesn't exist" do
     allow(@provider).to receive(:shell_out!)
     expect { @provider.run_action(:sync) }.to raise_error(Chef::Exceptions::MissingParentDirectory)
