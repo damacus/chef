@@ -3,27 +3,42 @@ project-name: chef
 config: omnibus/omnibus.rb
 test-path: omnibus/omnibus-test.sh
 test-path-windows: omnibus/omnibus-test.ps1
-fips-platforms:
-  - el-*-x86_64
-  - el-*-ppc64*
-  - ubuntu-*-x86_64
-  - windows-*
+
+# Split builds into FIPS and non-FIPS variants
+builds:
+  - variant: fips
+    env:
+      OMNIBUS_FIPS_MODE: "true"
+    platforms:
+      - el-*-x86_64
+      - el-*-ppc64*
+      - ubuntu-*-x86_64
+      - windows-*
+
+  - variant: standard
+    env:
+      OMNIBUS_FIPS_MODE: "false"
+    platforms:
+      - el-*-x86_64
+      - el-*-ppc64*
+      - ubuntu-*-x86_64
+      - debian-*-x86_64
+      - debian-*-aarch64
+      - windows-*
+      - mac_os_x-*
+
 skip-artifactory-platforms:
   - freebsd-13-amd64
 windows-64-msystem: UCRT64
 builder-to-testers-map:
   aix-7.1-powerpc:
-   - aix-7.1-powerpc
-   - aix-7.2-powerpc
-   - aix-7.3-powerpc
-      #  amazon-2022-aarch64:
-      #    - amazon-2022-aarch64
-      #  amazon-2022-x86_64:
-      #    - amazon-2022-x86_64
+    - aix-7.1-powerpc
+    - aix-7.2-powerpc
+    - aix-7.3-powerpc
   amazon-2023-aarch64:
     - amazon-2023-aarch64
   amazon-2023-x86_64:
-    - amazon-2023-x86_64    
+    - amazon-2023-x86_64
   debian-9-x86_64:
     - debian-9-x86_64
     - debian-10-x86_64
@@ -31,8 +46,6 @@ builder-to-testers-map:
   debian-10-aarch64:
     - debian-10-aarch64
     - debian-11-aarch64
-  # el-6-x86_64:
-  #   - el-6-x86_64
   el-7-aarch64:
     - el-7-aarch64
     - amazon-2-aarch64
@@ -66,7 +79,7 @@ builder-to-testers-map:
   rocky-8-x86_64:
     - rocky-8-x86_64
   rocky-9-x86_64:
-    - rocky-9-x86_64  
+    - rocky-9-x86_64
   sles-12-s390x:
     - sles-12-s390x
     - sles-15-s390x

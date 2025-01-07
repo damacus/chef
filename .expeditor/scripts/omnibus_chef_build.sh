@@ -9,7 +9,16 @@ export ARTIFACTORY_USERNAME="buildkite"
 
 export PROJECT_NAME="chef"
 export PATH="/opt/omnibus-toolchain/bin:${PATH}"
-export OMNIBUS_FIPS_MODE="true"
+
+# Determine package suffix based on FIPS mode
+if [[ "${OMNIBUS_FIPS_MODE:-false}" == "true" ]]; then
+  PACKAGE_SUFFIX="-fips"
+  export OMNIBUS_FIPS_MODE="true"
+else
+  PACKAGE_SUFFIX=""
+  export OMNIBUS_FIPS_MODE="false"
+fi
+
 export OMNIBUS_PIPELINE_DEFINITION_PATH="${SCRIPT_DIR}/../release.omnibus.yml"
 
 echo "--- Installing Chef Foundation"
@@ -35,8 +44,8 @@ cd "${SCRIPT_DIR}/../../omnibus"
 bundle config set --local without development
 bundle install
 
-echo "--- Building Chef"
-bundle exec omnibus build chef -l internal --override append_timestamp:false
+echo "--- Building Chef${PACKAGE_SUFFIX}"
+bundle exec omnibus build "chef${PACKAGE_SUFFIX}" -l internal --override append_timestamp:false
 
 echo "--- Uploading package to BuildKite"
 extensions=( bff deb dmg msi p5p rpm solaris amd64.sh i386.sh )

@@ -14,8 +14,12 @@
 # limitations under the License.
 #
 
-name "chef"
-friendly_name "Chef Infra Client"
+# Determine if we're building a FIPS package
+fips_mode = ENV['OMNIBUS_FIPS_MODE'] == 'true'
+fips_suffix = fips_mode ? '-fips' : ''
+
+name "chef#{fips_suffix}"
+friendly_name "Chef Infra Client#{fips_suffix}"
 maintainer "Chef Software, Inc. <maintainers@chef.io>"
 homepage "https://www.chef.io"
 license "Chef EULA"
@@ -34,7 +38,7 @@ if windows?
   #       Native gems will use gcc which will barf on files with spaces,
   #       which is only fixable if everyone in the world fixes their Makefiles
   install_dir  "#{default_root}/opscode/#{name}"
-  package_name "chef-client"
+  package_name "chef-client#{fips_suffix}"
 else
   install_dir "#{default_root}/#{name}"
 end
